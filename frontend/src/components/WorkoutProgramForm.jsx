@@ -1,276 +1,118 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
 
-function WorkoutProgramForm({
-  program,
-  onSuccess,
+import { useState } from "react";
+
+export default function WorkoutProgramForm({
+  onSubmit,
+  initialData = null,
   onCancel,
 }) {
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    difficulty: 'Beginner',
-    duration: '',
-  })
-
-  const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (program) {
-      setForm({
-        name: program.name || '',
-        description: program.description || '',
-        difficulty: program.difficulty || 'Beginner',
-        duration: program.duration || '',
-      })
-    } else {
-      setForm({
-        name: '',
-        description: '',
-        difficulty: 'Beginner',
-        duration: '',
-      })
-    }
-
-    setErrors({})
-  }, [program])
-
-  const isEditing = Boolean(program)
+  const [formData, setFormData] = useState({
+    program_name: initialData?.program_name || "",
+    description: initialData?.description || "",
+    difficulty: initialData?.difficulty || "Beginner",
+    duration_weeks: initialData?.duration_weeks || "",
+    days_per_week: initialData?.days_per_week || "",
+    status: initialData?.status || "Active",
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }))
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-    setErrors((previous) => ({
-      ...previous,
-      [name]: '',
-    }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const validationErrors = {}
-
-    if (!form.name.trim()) {
-      validationErrors.name =
-        'Workout program name is required.'
-    }
-
-    if (!form.duration) {
-      validationErrors.duration =
-        'Duration is required.'
-    } else if (Number(form.duration) < 1) {
-      validationErrors.duration =
-        'Duration must be at least 1 minute.'
-    }
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      return
-    }
-
-    try {
-      setLoading(true)
-      setErrors({})
-
-      const data = {
-        name: form.name,
-        description: form.description,
-        difficulty: form.difficulty,
-        duration: Number(form.duration),
-      }
-
-      if (isEditing) {
-        await api.put(
-          `/workout-programs/${program.id}`,
-          data,
-        )
-
-        onSuccess(
-          'Workout program updated successfully.',
-        )
-      } else {
-        await api.post(
-          '/workout-programs',
-          data,
-        )
-
-        onSuccess(
-          'Workout program created successfully.',
-        )
-      }
-    } catch (error) {
-      console.error(
-        'Workout program save error:',
-        error,
-      )
-
-      if (error.response?.status === 422) {
-        setErrors(
-          error.response.data.errors || {},
-        )
-      } else {
-        setErrors({
-          general: isEditing
-            ? 'Failed to update workout program.'
-            : 'Failed to create workout program.',
-        })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+    onSubmit?.({
+      ...formData,
+      duration_weeks: Number(formData.duration_weeks),
+      days_per_week: Number(formData.days_per_week),
+    });
+  };
 
   return (
-    <div className="form-card">
+    <form onSubmit={handleSubmit} className="management-form">
+      <h2>{initialData ? "Edit Workout Program" : "Add Workout Program"}</h2>
 
-      <div className="form-header">
-        <h3>
-          {isEditing
-            ? 'Edit Workout Program'
-            : 'Add New Workout Program'}
-        </h3>
+      <label htmlFor="program_name">Program Name</label>
+      <input
+        id="program_name"
+        name="program_name"
+        value={formData.program_name}
+        onChange={handleChange}
+        placeholder="e.g. Beginner Strength Training"
+        required
+      />
 
-        <button
-          type="button"
-          onClick={onCancel}
-          className="close-button"
-        >
-          ×
+      <label htmlFor="description">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        placeholder="Describe the workout program"
+        rows="3"
+      />
+
+      <label htmlFor="difficulty">Difficulty</label>
+      <select
+        id="difficulty"
+        name="difficulty"
+        value={formData.difficulty}
+        onChange={handleChange}
+      >
+        <option value="Beginner">Beginner</option>
+        <option value="Intermediate">Intermediate</option>
+        <option value="Advanced">Advanced</option>
+      </select>
+
+      <label htmlFor="duration_weeks">Duration (weeks)</label>
+      <input
+        id="duration_weeks"
+        name="duration_weeks"
+        type="number"
+        min="1"
+        value={formData.duration_weeks}
+        onChange={handleChange}
+        placeholder="e.g. 8"
+        required
+      />
+
+      <label htmlFor="days_per_week">Training Days per Week</label>
+      <input
+        id="days_per_week"
+        name="days_per_week"
+        type="number"
+        min="1"
+        max="7"
+        value={formData.days_per_week}
+        onChange={handleChange}
+        placeholder="e.g. 4"
+        required
+      />
+
+      <label htmlFor="status">Status</label>
+      <select
+        id="status"
+        name="status"
+        value={formData.status}
+        onChange={handleChange}
+      >
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+
+      <div className="form-actions">
+        <button type="submit">
+          {initialData ? "Update Workout Program" : "Add Workout Program"}
         </button>
-      </div>
 
-      {errors.general && (
-        <div className="error-message">
-          {errors.general}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-
-        <div className="form-group">
-          <label>Program Name</label>
-
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Example: Full Body Strength"
-          />
-
-          {errors.name && (
-            <small className="field-error">
-              {Array.isArray(errors.name)
-                ? errors.name[0]
-                : errors.name}
-            </small>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Description</label>
-
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Describe the workout program..."
-            rows="4"
-          />
-
-          {errors.description && (
-            <small className="field-error">
-              {Array.isArray(errors.description)
-                ? errors.description[0]
-                : errors.description}
-            </small>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Difficulty</label>
-
-          <select
-            name="difficulty"
-            value={form.difficulty}
-            onChange={handleChange}
-          >
-            <option value="Beginner">
-              Beginner
-            </option>
-
-            <option value="Intermediate">
-              Intermediate
-            </option>
-
-            <option value="Advanced">
-              Advanced
-            </option>
-          </select>
-
-          {errors.difficulty && (
-            <small className="field-error">
-              {Array.isArray(errors.difficulty)
-                ? errors.difficulty[0]
-                : errors.difficulty}
-            </small>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Duration (minutes)</label>
-
-          <input
-            type="number"
-            name="duration"
-            value={form.duration}
-            onChange={handleChange}
-            min="1"
-          />
-
-          {errors.duration && (
-            <small className="field-error">
-              {Array.isArray(errors.duration)
-                ? errors.duration[0]
-                : errors.duration}
-            </small>
-          )}
-        </div>
-
-        <div className="form-actions">
-
-          <button
-            type="button"
-            onClick={onCancel}
-          >
+        {onCancel && (
+          <button type="button" onClick={onCancel}>
             Cancel
           </button>
-
-          <button
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? isEditing
-                ? 'Updating...'
-                : 'Creating...'
-              : isEditing
-                ? 'Update Workout Program'
-                : 'Create Workout Program'}
-          </button>
-
-        </div>
-
-      </form>
-    </div>
-  )
+        )}
+      </div>
+    </form>
+  );
 }
-
-export default WorkoutProgramForm

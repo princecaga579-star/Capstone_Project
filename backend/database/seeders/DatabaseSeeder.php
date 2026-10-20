@@ -13,9 +13,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // ==========================================
-        // 1. ADMIN ACCOUNT
-        // ==========================================
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@primefitness.com'],
@@ -26,9 +23,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // ==========================================
-        // 2. MAIN MEMBER ACCOUNT
-        // ==========================================
 
         $member = User::updateOrCreate(
             ['email' => 'member@primefitness.com'],
@@ -39,17 +33,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // ==========================================
-        // 3. ADDITIONAL MEMBERS
-        // ==========================================
 
         User::factory(10)->create([
             'role' => 'member',
         ]);
 
-        // ==========================================
-        // 4. CREATE MEMBERSHIPS
-        // ==========================================
 
         Membership::factory(12)->create();
 
@@ -60,15 +48,10 @@ class DatabaseSeeder extends Seeder
             'amount' => 4000,
         ]);
 
-        // ==========================================
-        // 5. CREATE WORKOUT PROGRAMS
-        // ==========================================
 
         $programs = WorkoutProgram::factory(10)->create();
 
-        // ==========================================
-        // 6. CREATE EXERCISES
-        // ==========================================
+
 
         foreach ($programs as $program) {
             Exercise::factory(3)->create([

@@ -1,284 +1,120 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
 
-function ExerciseForm({
-  exercise,
-  programs,
-  onSuccess,
-  onCancel,
-}) {
-  const [form, setForm] = useState({
-    workout_program_id: '',
-    name: '',
-    description: '',
-    sets: '',
-    reps: '',
-  })
+import { useState } from "react";
 
-  const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (exercise) {
-      setForm({
-        workout_program_id:
-          exercise.workout_program_id || '',
-        name: exercise.name || '',
-        description: exercise.description || '',
-        sets: exercise.sets || '',
-        reps: exercise.reps || '',
-      })
-    } else {
-      setForm({
-        workout_program_id: '',
-        name: '',
-        description: '',
-        sets: '',
-        reps: '',
-      })
-    }
-
-    setErrors({})
-  }, [exercise])
-
-  const isEditing = Boolean(exercise)
+export default function ExerciseForm({ onSubmit, initialData = null, onCancel }) {
+  const [formData, setFormData] = useState({
+    exercise_name: initialData?.exercise_name || "",
+    description: initialData?.description || "",
+    muscle_group: initialData?.muscle_group || "",
+    difficulty: initialData?.difficulty || "Beginner",
+    duration: initialData?.duration || "",
+    calories_burned: initialData?.calories_burned || "",
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }))
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-    setErrors((previous) => ({
-      ...previous,
-      [name]: '',
-    }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const validationErrors = {}
-
-    if (!form.workout_program_id) {
-      validationErrors.workout_program_id =
-        'Workout program is required.'
-    }
-
-    if (!form.name.trim()) {
-      validationErrors.name =
-        'Exercise name is required.'
-    }
-
-    if (!form.sets) {
-      validationErrors.sets =
-        'Number of sets is required.'
-    } else if (Number(form.sets) < 1) {
-      validationErrors.sets =
-        'Sets must be at least 1.'
-    }
-
-    if (!form.reps) {
-      validationErrors.reps =
-        'Number of reps is required.'
-    } else if (Number(form.reps) < 1) {
-      validationErrors.reps =
-        'Reps must be at least 1.'
-    }
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      return
-    }
-
-    try {
-      setLoading(true)
-      setErrors({})
-
-      const data = {
-        workout_program_id: Number(
-          form.workout_program_id,
-        ),
-        name: form.name,
-        description: form.description,
-        sets: Number(form.sets),
-        reps: Number(form.reps),
-      }
-
-      if (isEditing) {
-        await api.put(
-          `/exercises/${exercise.id}`,
-          data,
-        )
-
-        onSuccess('Exercise updated successfully.')
-      } else {
-        await api.post('/exercises', data)
-
-        onSuccess('Exercise created successfully.')
-      }
-    } catch (error) {
-      console.error('Exercise save error:', error)
-
-      if (error.response?.status === 422) {
-        setErrors(
-          error.response.data.errors || {},
-        )
-      } else {
-        setErrors({
-          general: isEditing
-            ? 'Failed to update exercise.'
-            : 'Failed to create exercise.',
-        })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+    onSubmit?.({
+      ...formData,
+      duration: Number(formData.duration),
+      calories_burned: Number(formData.calories_burned),
+    });
+  };
 
   return (
-    <div className="form-card">
-      <h2>
-        {isEditing
-          ? 'Edit Exercise'
-          : 'Add Exercise'}
-      </h2>
+    <form onSubmit={handleSubmit} className="management-form">
+      <h2>{initialData ? "Edit Exercise" : "Add Exercise"}</h2>
 
-      {errors.general && (
-        <p className="error-message">
-          {errors.general}
-        </p>
-      )}
+      <label htmlFor="exercise_name">Exercise Name</label>
+      <input
+        id="exercise_name"
+        name="exercise_name"
+        value={formData.exercise_name}
+        onChange={handleChange}
+        placeholder="e.g. Push-ups"
+        required
+      />
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Workout Program</label>
+      <label htmlFor="description">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        placeholder="Describe the exercise"
+        rows="3"
+      />
 
-          <select
-            name="workout_program_id"
-            value={form.workout_program_id}
-            onChange={handleChange}
-          >
-            <option value="">
-              Select Workout Program
-            </option>
+      <label htmlFor="muscle_group">Muscle Group</label>
+      <select
+        id="muscle_group"
+        name="muscle_group"
+        value={formData.muscle_group}
+        onChange={handleChange}
+        required
+      >
+        <option value="">Select muscle group</option>
+        <option value="Chest">Chest</option>
+        <option value="Back">Back</option>
+        <option value="Shoulders">Shoulders</option>
+        <option value="Arms">Arms</option>
+        <option value="Legs">Legs</option>
+        <option value="Core">Core</option>
+        <option value="Full Body">Full Body</option>
+      </select>
 
-            {programs.map((program) => (
-              <option
-                key={program.id}
-                value={program.id}
-              >
-                {program.name}
-              </option>
-            ))}
-          </select>
+      <label htmlFor="difficulty">Difficulty</label>
+      <select
+        id="difficulty"
+        name="difficulty"
+        value={formData.difficulty}
+        onChange={handleChange}
+      >
+        <option value="Beginner">Beginner</option>
+        <option value="Intermediate">Intermediate</option>
+        <option value="Advanced">Advanced</option>
+      </select>
 
-          {errors.workout_program_id && (
-            <p className="error-message">
-              {errors.workout_program_id}
-            </p>
-          )}
-        </div>
+      <label htmlFor="duration">Duration (minutes)</label>
+      <input
+        id="duration"
+        name="duration"
+        type="number"
+        min="1"
+        value={formData.duration}
+        onChange={handleChange}
+        placeholder="e.g. 15"
+        required
+      />
 
-        <div>
-          <label>Exercise Name</label>
+      <label htmlFor="calories_burned">Estimated Calories Burned</label>
+      <input
+        id="calories_burned"
+        name="calories_burned"
+        type="number"
+        min="0"
+        value={formData.calories_burned}
+        onChange={handleChange}
+        placeholder="e.g. 100"
+        required
+      />
 
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Example: Bench Press"
-          />
+      <div className="form-actions">
+        <button type="submit">
+          {initialData ? "Update Exercise" : "Add Exercise"}
+        </button>
 
-          {errors.name && (
-            <p className="error-message">
-              {errors.name}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label>Description</label>
-
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Describe the exercise"
-            rows="3"
-          />
-
-          {errors.description && (
-            <p className="error-message">
-              {errors.description}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label>Sets</label>
-
-          <input
-            type="number"
-            name="sets"
-            value={form.sets}
-            onChange={handleChange}
-            min="1"
-            placeholder="Example: 3"
-          />
-
-          {errors.sets && (
-            <p className="error-message">
-              {errors.sets}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label>Reps</label>
-
-          <input
-            type="number"
-            name="reps"
-            value={form.reps}
-            onChange={handleChange}
-            min="1"
-            placeholder="Example: 10"
-          />
-
-          {errors.reps && (
-            <p className="error-message">
-              {errors.reps}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? 'Saving...'
-              : isEditing
-                ? 'Update Exercise'
-                : 'Add Exercise'}
-          </button>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-          >
+        {onCancel && (
+          <button type="button" onClick={onCancel}>
             Cancel
           </button>
-        </div>
-      </form>
-    </div>
-  )
+        )}
+      </div>
+    </form>
+  );
 }
-
-export default ExerciseForm

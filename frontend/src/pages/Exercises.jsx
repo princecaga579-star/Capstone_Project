@@ -1,310 +1,92 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import ExerciseForm from '../components/ExerciseForm'
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext.jsx";
+
+const API_URL = "http://127.0.0.1:8000/api";
 
 function Exercises() {
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
-
-  const [exercises, setExercises] = useState([])
-  const [programs, setPrograms] = useState([])
-
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
-  const [search, setSearch] = useState('')
-  const [programFilter, setProgramFilter] = useState('')
-
-  const [showForm, setShowForm] = useState(false)
-  const [editingExercise, setEditingExercise] =
-    useState(null)
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      setError('')
-
-      const [exerciseResponse, programResponse] =
-        await Promise.all([
-          api.get('/exercises'),
-          api.get('/workout-programs'),
-        ])
-
-      setExercises(
-        exerciseResponse.data.data ||
-          exerciseResponse.data,
-      )
-
-      setPrograms(
-        programResponse.data.data ||
-          programResponse.data,
-      )
-    } catch (err) {
-      console.error(err)
-      setError('Failed to load exercises.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { token } = useAuth();
+  const [items, setItems] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchData()
-  }, [])
-
-  const handleFormSuccess = (message) => {
-    setShowForm(false)
-    setEditingExercise(null)
-    setSuccess(message)
-    setError('')
-
-    fetchData()
-
-    setTimeout(() => {
-      setSuccess('')
-    }, 3000)
-  }
-
-  const handleEdit = (exercise) => {
-    setEditingExercise(exercise)
-    setShowForm(true)
-    setError('')
-    setSuccess('')
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
-  }
-
-  const handleCancelForm = () => {
-    setShowForm(false)
-    setEditingExercise(null)
-  }
-
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this exercise?',
-    )
-
-    if (!confirmed) return
-
-    try {
-      setError('')
-      setSuccess('')
-
-      await api.delete(`/exercises/${id}`)
-
-      setSuccess(
-        'Exercise deleted successfully.',
-      )
-
-      fetchData()
-
-      setTimeout(() => {
-        setSuccess('')
-      }, 3000)
-    } catch (err) {
-      console.error(err)
-
-      setError(
-        'Failed to delete exercise.',
-      )
+    async function loadExercises() {
+      try {
+        const response = await axios.get(`${API_URL}/exercises`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = response.data;
+        setItems(Array.isArray(data) ? data : data.data ?? []);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "Unable to load exercises."
+        );
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  const filteredExercises = exercises.filter(
-    (exercise) => {
-      const searchText =
-        search.toLowerCase()
+    loadExercises();
+  }, [token]);
 
-      const matchesSearch =
-        exercise.name
-          .toLowerCase()
-          .includes(searchText) ||
-        (
-          exercise.description || ''
-        )
-          .toLowerCase()
-          .includes(searchText) ||
-        (
-          exercise.workout_program?.name || ''
-        )
-          .toLowerCase()
-          .includes(searchText)
-
-      const matchesProgram =
-        !programFilter ||
-        String(
-          exercise.workout_program_id,
-        ) === String(programFilter)
-
-      return (
-        matchesSearch &&
-        matchesProgram
-      )
-    },
-  )
+  const filtered = items.filter((item) =>
+    `${item.name ?? ""} ${item.description ?? ""} ${item.muscle_group ?? ""} ${item.category ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
-    <div className="page-container">
-      <h1>Exercises</h1>
-
-      <p>
-        Manage exercises and their workout
-        programs.
-      </p>
-
-      {success && (
-        <div className="success-message">
-          {success}
+    <main className="page-container">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">EXERCISE LIBRARY</p>
+          <h1>Exercises</h1>
+          <p className="muted">Browse exercises and target muscle groups.</p>
         </div>
-      )}
-
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
-
-      {isAdmin && (
-        <button
-          onClick={() => {
-            setEditingExercise(null)
-            setShowForm(true)
-            setError('')
-            setSuccess('')
-          }}
-        >
-          + Add Exercise
-        </button>
-      )}
-
-      {isAdmin && showForm && (
-        <ExerciseForm
-          exercise={editingExercise}
-          programs={programs}
-          onSuccess={handleFormSuccess}
-          onCancel={handleCancelForm}
-        />
-      )}
-
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Search exercises..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
-
-        <select
-          value={programFilter}
-          onChange={(e) =>
-            setProgramFilter(e.target.value)
-          }
-        >
-          <option value="">
-            All Workout Programs
-          </option>
-
-          {programs.map((program) => (
-            <option
-              key={program.id}
-              value={program.id}
-            >
-              {program.name}
-            </option>
-          ))}
-        </select>
       </div>
 
+      <section className="toolbar">
+        <input
+          type="search"
+          placeholder="Search exercises..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </section>
+
+      {error && <p className="error-message">{error}</p>}
+
       {loading ? (
-        <p>Loading exercises...</p>
-      ) : filteredExercises.length === 0 ? (
-        <p>No exercises found.</p>
+        <p className="loading">Loading exercises...</p>
+      ) : filtered.length === 0 ? (
+        <section className="content-card empty-state">
+          No exercises found.
+        </section>
       ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Exercise</th>
-                <th>Workout Program</th>
-                <th>Description</th>
-                <th>Sets</th>
-                <th>Reps</th>
-
-                {isAdmin && (
-                  <th>Actions</th>
-                )}
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredExercises.map(
-                (exercise) => (
-                  <tr key={exercise.id}>
-                    <td>{exercise.id}</td>
-
-                    <td>
-                      {exercise.name}
-                    </td>
-
-                    <td>
-                      {exercise
-                        .workout_program
-                        ?.name ||
-                        'Unknown'}
-                    </td>
-
-                    <td>
-                      {exercise.description ||
-                        'No description'}
-                    </td>
-
-                    <td>
-                      {exercise.sets}
-                    </td>
-
-                    <td>
-                      {exercise.reps}
-                    </td>
-
-                    {isAdmin && (
-                      <td>
-                        <button
-                          onClick={() =>
-                            handleEdit(
-                              exercise,
-                            )
-                          }
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            handleDelete(
-                              exercise.id,
-                            )
-                          }
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ),
-              )}
-            </tbody>
-          </table>
-        </div>
+        <section className="resource-grid">
+          {filtered.map((item) => (
+            <article className="resource-card" key={item.id}>
+              <span className="resource-icon">EX</span>
+              <p className="eyebrow">
+                {item.muscle_group ?? item.category ?? "EXERCISE"}
+              </p>
+              <h2>{item.name ?? "Untitled Exercise"}</h2>
+              <p className="muted">
+                {item.description || "No description provided."}
+              </p>
+              <div className="resource-meta">
+                <span>Sets: {item.sets ?? "—"}</span>
+                <span>Reps: {item.reps ?? "—"}</span>
+              </div>
+            </article>
+          ))}
+        </section>
       )}
-    </div>
-  )
+    </main>
+  );
 }
 
-export default Exercises
+export default Exercises;

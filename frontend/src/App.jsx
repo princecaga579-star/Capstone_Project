@@ -1,136 +1,95 @@
+
 import {
   BrowserRouter,
-  Routes,
-  Route,
   Navigate,
-} from 'react-router-dom'
+  Route,
+  Routes,
+} from "react-router-dom";
 
-import { useAuth } from './context/AuthContext'
+import Navbar from "./components/Navbar.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Memberships from './pages/Memberships'
-import WorkoutPrograms from './pages/WorkoutPrograms'
-import Exercises from './pages/Exercises'
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Memberships from "./pages/Memberships.jsx";
+import WorkoutPrograms from "./pages/WorkoutPrograms.jsx";
+import Exercises from "./pages/Exercises.jsx";
+import WorkoutLogs from "./pages/WorkoutLogs.jsx";
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
-
-  if (loading) {
-    return <div>Loading...</div>
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  return children
-}
-
-function AdminRoute({ children }) {
-  const { user, loading } = useAuth()
-
-  if (loading) {
-    return <div>Loading...</div>
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />
-  }
-
-  return children
+function PrivatePage({ children }) {
+  return (
+    <ProtectedRoute>
+      <Navbar />
+      {children}
+    </ProtectedRoute>
+  );
 }
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-        {/* Public Route */}
         <Route
-          path="/login"
-          element={<Login />}
+          path="/"
+          element={<Navigate to="/dashboard" replace />}
         />
 
-        {/* Protected Dashboard */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <PrivatePage>
               <Dashboard />
-            </ProtectedRoute>
+            </PrivatePage>
           }
         />
 
-        {/* Memberships */}
         <Route
           path="/memberships"
           element={
-            <ProtectedRoute>
+            <PrivatePage>
               <Memberships />
-            </ProtectedRoute>
+            </PrivatePage>
           }
         />
 
-        {/* Workout Programs */}
         <Route
           path="/workout-programs"
           element={
-            <ProtectedRoute>
+            <PrivatePage>
               <WorkoutPrograms />
-            </ProtectedRoute>
+            </PrivatePage>
           }
         />
 
-        {/* Exercises */}
         <Route
           path="/exercises"
           element={
-            <ProtectedRoute>
+            <PrivatePage>
               <Exercises />
-            </ProtectedRoute>
+            </PrivatePage>
           }
         />
 
-        {/* Admin Workout Programs */}
         <Route
-          path="/admin/workout-programs"
+          path="/workout-logs"
           element={
-            <AdminRoute>
-              <WorkoutPrograms />
-            </AdminRoute>
+            <PrivatePage>
+              <WorkoutLogs />
+            </PrivatePage>
           }
         />
 
-        {/* Default Route */}
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
-        />
-
-        {/* Unknown Route */}
         <Route
           path="*"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
+          element={<Navigate to="/dashboard" replace />}
         />
-
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

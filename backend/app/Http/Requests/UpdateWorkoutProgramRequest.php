@@ -14,9 +14,6 @@ class UpdateWorkoutProgramRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         return [
@@ -27,9 +24,6 @@ class UpdateWorkoutProgramRequest extends FormRequest
         ];
     }
 
-    /**
-     * Custom validation messages.
-     */
     public function messages(): array
     {
         return [

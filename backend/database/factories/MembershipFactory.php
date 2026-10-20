@@ -1,3 +1,4 @@
+
 <?php
 
 namespace Database\Factories;
@@ -6,9 +7,6 @@ use App\Models\Membership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Membership>
- */
 class MembershipFactory extends Factory
 {
     /**
@@ -22,7 +20,9 @@ class MembershipFactory extends Factory
         $endDate = (clone $startDate)->modify('+1 year');
 
         return [
-            'user_id' => User::where('role', 'member')->inRandomOrder()->value('id')
+            'user_id' => User::where('role', 'member')
+                ->inRandomOrder()
+                ->value('id')
                 ?? User::factory()->create(['role' => 'member'])->id,
 
             'membership_type' => fake()->randomElement([
@@ -33,7 +33,6 @@ class MembershipFactory extends Factory
             ]),
 
             'start_date' => $startDate->format('Y-m-d'),
-
             'end_date' => $endDate->format('Y-m-d'),
 
             'status' => fake()->randomElement([

@@ -34,7 +34,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // Login
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -59,7 +58,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Current authenticated user
     public function me(Request $request)
     {
         return response()->json([
@@ -67,7 +65,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Logout
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

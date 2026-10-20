@@ -14,7 +14,6 @@ class ExerciseController extends Controller
     {
         $query = Exercise::with('workoutProgram');
 
-        // Search
         if ($request->filled('search')) {
             $search = $request->search;
 

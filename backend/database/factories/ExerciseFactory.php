@@ -6,9 +6,7 @@ use App\Models\Exercise;
 use App\Models\WorkoutProgram;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Exercise>
- */
+
 class ExerciseFactory extends Factory
 {
     public function definition(): array

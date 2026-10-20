@@ -11,9 +11,6 @@ use Illuminate\Http\Request;
 
 class MembershipController extends Controller
 {
-    /**
-     * Display a paginated list of memberships.
-     */
     public function index(Request $request)
     {
         $query = Membership::with('user');
@@ -29,8 +26,6 @@ class MembershipController extends Controller
                     });
             });
         }
-
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -40,9 +35,6 @@ class MembershipController extends Controller
         return MembershipResource::collection($memberships);
     }
 
-    /**
-     * Store a new membership.
-     */
     public function store(StoreMembershipRequest $request)
     {
         $membership = Membership::create($request->validated());
@@ -55,9 +47,6 @@ class MembershipController extends Controller
         ], 201);
     }
 
-    /**
-     * Display a specific membership.
-     */
     public function show(string $id)
     {
         $membership = Membership::with('user')->findOrFail($id);
@@ -65,9 +54,6 @@ class MembershipController extends Controller
         return new MembershipResource($membership);
     }
 
-    /**
-     * Update a membership.
-     */
     public function update(UpdateMembershipRequest $request, string $id)
     {
         $membership = Membership::findOrFail($id);
@@ -82,9 +68,6 @@ class MembershipController extends Controller
         ]);
     }
 
-    /**
-     * Update membership status.
-     */
     public function updateStatus(
         UpdateMembershipStatusRequest $request,
         string $id
@@ -103,9 +86,7 @@ class MembershipController extends Controller
         ]);
     }
 
-    /**
-     * Delete a membership.
-     */
+
     public function destroy(string $id)
     {
         $membership = Membership::findOrFail($id);

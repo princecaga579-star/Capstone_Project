@@ -1,320 +1,90 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import WorkoutProgramForm from '../components/WorkoutProgramForm'
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext.jsx";
+
+const API_URL = "http://127.0.0.1:8000/api";
 
 function WorkoutPrograms() {
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
-
-  const [programs, setPrograms] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
-  const [search, setSearch] = useState('')
-  const [difficulty, setDifficulty] = useState('')
-
-  const [showForm, setShowForm] = useState(false)
-  const [editingProgram, setEditingProgram] = useState(null)
-
-  const fetchPrograms = async () => {
-    try {
-      setLoading(true)
-      setError('')
-
-      const response = await api.get('/workout-programs')
-
-      setPrograms(response.data.data || response.data)
-    } catch (err) {
-      console.error(err)
-      setError('Failed to load workout programs.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { token } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchPrograms()
-  }, [])
-
-  const handleFormSuccess = (message) => {
-    setShowForm(false)
-    setEditingProgram(null)
-    setSuccess(message)
-    setError('')
-
-    fetchPrograms()
-
-    setTimeout(() => {
-      setSuccess('')
-    }, 3000)
-  }
-
-  const handleEdit = (program) => {
-    setEditingProgram(program)
-    setShowForm(true)
-    setError('')
-    setSuccess('')
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
-  }
-
-  const handleCancelForm = () => {
-    setShowForm(false)
-    setEditingProgram(null)
-  }
-
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this workout program?',
-    )
-
-    if (!confirmed) return
-
-    try {
-      setError('')
-      setSuccess('')
-
-      await api.delete(`/workout-programs/${id}`)
-
-      setSuccess(
-        'Workout program deleted successfully.',
-      )
-
-      fetchPrograms()
-
-      setTimeout(() => {
-        setSuccess('')
-      }, 3000)
-    } catch (err) {
-      console.error(err)
-      setError(
-        'Failed to delete workout program.',
-      )
+    async function loadPrograms() {
+      try {
+        const response = await axios.get(`${API_URL}/workout-programs`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = response.data;
+        setItems(Array.isArray(data) ? data : data.data ?? []);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "Unable to load workout programs."
+        );
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  const filteredPrograms = programs.filter(
-    (program) => {
-      const matchesSearch =
-        program.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        (program.description || '')
-          .toLowerCase()
-          .includes(search.toLowerCase())
+    loadPrograms();
+  }, [token]);
 
-      const matchesDifficulty =
-        !difficulty ||
-        program.difficulty === difficulty
-
-      return (
-        matchesSearch &&
-        matchesDifficulty
-      )
-    },
-  )
+  const filtered = items.filter((item) =>
+    `${item.name ?? ""} ${item.description ?? ""} ${item.level ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
-    <div className="page-container">
-
-      <header className="page-header">
+    <main className="page-container">
+      <div className="page-header">
         <div>
-          <h1>Prime Fitness</h1>
-          <p>Workout Program Management</p>
+          <p className="eyebrow">TRAINING PLANS</p>
+          <h1>Workout Programs</h1>
+          <p className="muted">Explore the available training programs.</p>
         </div>
+      </div>
 
-        <a href="/dashboard">
-          ← Dashboard
-        </a>
-      </header>
+      <section className="toolbar">
+        <input
+          type="search"
+          placeholder="Search workout programs..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </section>
 
-      <main className="page-content">
+      {error && <p className="error-message">{error}</p>}
 
-        <div className="page-title">
-          <div>
-            <h2>Workout Programs</h2>
-
-            <p>
-              Manage Prime Fitness workout programs.
-            </p>
-          </div>
-
-          {isAdmin && (
-            <button
-              onClick={() => {
-                setEditingProgram(null)
-                setShowForm(true)
-                setError('')
-                setSuccess('')
-              }}
-            >
-              + Add Workout Program
-            </button>
-          )}
-        </div>
-
-        {showForm && isAdmin && (
-          <WorkoutProgramForm
-            program={editingProgram}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCancelForm}
-          />
-        )}
-
-        {success && (
-          <div className="success-message">
-            {success}
-          </div>
-        )}
-
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        <div className="filters">
-
-          <input
-            type="text"
-            placeholder="Search workout programs..."
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-          />
-
-          <select
-            value={difficulty}
-            onChange={(e) =>
-              setDifficulty(e.target.value)
-            }
-          >
-            <option value="">
-              All Difficulties
-            </option>
-
-            <option value="Beginner">
-              Beginner
-            </option>
-
-            <option value="Intermediate">
-              Intermediate
-            </option>
-
-            <option value="Advanced">
-              Advanced
-            </option>
-          </select>
-
-        </div>
-
-        {loading ? (
-          <div className="loading">
-            Loading workout programs...
-          </div>
-        ) : filteredPrograms.length === 0 ? (
-          <div className="empty-state">
-            No workout programs found.
-          </div>
-        ) : (
-          <div className="table-container">
-
-            <table>
-
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Program</th>
-                  <th>Description</th>
-                  <th>Difficulty</th>
-                  <th>Duration</th>
-                  <th>Exercises</th>
-
-                  {isAdmin && (
-                    <th>Actions</th>
-                  )}
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {filteredPrograms.map(
-                  (program) => (
-                    <tr key={program.id}>
-
-                      <td>
-                        {program.id}
-                      </td>
-
-                      <td>
-                        {program.name}
-                      </td>
-
-                      <td>
-                        {program.description ||
-                          '-'}
-                      </td>
-
-                      <td>
-                        {program.difficulty}
-                      </td>
-
-                      <td>
-                        {program.duration} min
-                      </td>
-
-                      <td>
-                        {program.exercises
-                          ? program.exercises.length
-                          : 0}
-                      </td>
-
-                      {isAdmin && (
-                        <td>
-
-                          <button
-                            onClick={() =>
-                              handleEdit(program)
-                            }
-                          >
-                            Edit
-                          </button>
-
-                          {' '}
-
-                          <button
-                            onClick={() =>
-                              handleDelete(
-                                program.id,
-                              )
-                            }
-                          >
-                            Delete
-                          </button>
-
-                        </td>
-                      )}
-
-                    </tr>
-                  ),
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
-        )}
-
-      </main>
-    </div>
-  )
+      {loading ? (
+        <p className="loading">Loading programs...</p>
+      ) : filtered.length === 0 ? (
+        <section className="content-card empty-state">
+          No workout programs found.
+        </section>
+      ) : (
+        <section className="resource-grid">
+          {filtered.map((item) => (
+            <article className="resource-card" key={item.id}>
+              <span className="resource-icon">WP</span>
+              <p className="eyebrow">WORKOUT PROGRAM</p>
+              <h2>{item.name ?? "Untitled Program"}</h2>
+              <p className="muted">
+                {item.description || "No description provided."}
+              </p>
+              <div className="resource-meta">
+                <span>Level: {item.level ?? "Not specified"}</span>
+                <span>Duration: {item.duration ?? "—"}</span>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+    </main>
+  );
 }
 
-export default WorkoutPrograms
+export default WorkoutPrograms;

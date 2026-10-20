@@ -1,150 +1,76 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function Login() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-  })
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
-
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    })
-
-    setErrors({
-      ...errors,
-      [e.target.name]: '',
-    })
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const newErrors = {}
-
-    if (!form.email) {
-      newErrors.email = 'Email is required.'
-    }
-
-    if (!form.password) {
-      newErrors.password = 'Password is required.'
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-
-    setLoading(true)
-    setErrors({})
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await login(form.email, form.password)
-
-      if (response.user.role === 'admin') {
-        navigate('/dashboard')
-      } else {
-        navigate('/dashboard')
-      }
-    } catch (error) {
-      if (error.response?.status === 422) {
-        setErrors(
-          error.response.data.errors || {
-            email: ['The provided credentials are incorrect.'],
-          },
-        )
-      } else {
-        setErrors({
-          general: 'Unable to connect to the server.',
-        })
-      }
+      await login(email, password);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Login failed. Check your email and password."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>Prime Fitness</h1>
-          <p>Membership & Workout Management System</p>
-        </div>
+    <main className="auth-page">
+      <form className="auth-card" onSubmit={handleSubmit}>
+        <div className="auth-brand">PF</div>
+        <p className="eyebrow">WELCOME BACK</p>
+        <h1>Sign in to Prime Fitness</h1>
+        <p className="muted">Manage your membership and workouts.</p>
 
-        <h2>Welcome Back</h2>
+        {error && <p className="error-message">{error}</p>}
 
-        {errors.general && (
-          <div className="error-message">
-            {errors.general}
-          </div>
-        )}
+        <label htmlFor="email">Email address</label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@example.com"
+          required
+        />
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
+        <label htmlFor="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter your password"
+          required
+        />
 
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-            />
+        <button className="primary-button" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
 
-            {errors.email && (
-              <small className="field-error">
-                {Array.isArray(errors.email)
-                  ? errors.email[0]
-                  : errors.email}
-              </small>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>Password</label>
-
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-            />
-
-            {errors.password && (
-              <small className="field-error">
-                {Array.isArray(errors.password)
-                  ? errors.password[0]
-                  : errors.password}
-              </small>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="login-button"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <p className="register-link">
-          Don't have an account?{' '}
-          <Link to="/register">Register here</Link>
+        <p className="auth-footer">
+          Don't have an account? <Link to="/register">Register</Link>
         </p>
-      </div>
-    </div>
-  )
+      </form>
+    </main>
+  );
 }
 
-export default Login
+export default Login;
